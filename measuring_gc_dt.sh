@@ -1,35 +1,5 @@
 #!/bin/bash
 
-idle_power_consumption=-1
-
-get_program_power_and_time_consumption () {
-    local executable_path="$1"
-    local num_runs="$2"
-    local num_execute="$3"
-    # Sla nu weer de  electricity_consumed_total op.
-    data_before=$(curl $ENERGY_STATS | grep -o '"electricity_consumed_total":[0-9.]*' | awk -F ':' '{print $2}')
-    # Run je programma.
-    # elapsed_time=$( { time $executable_path; } 2>&1 )
-    elapsed_time=$( { time seq $num_execute | xargs -I{} $executable_path; } 2>&1 )
-    # En sla de electricity_consumed_total weer op.
-    data_after=$(curl $ENERGY_STATS | grep -o '"electricity_consumed_total":[0-9.]*' | awk -F ':' '{print $2}')
-    echo "elapsed time: $elapsed_time"
-    # Haal de electricity_consumed_total's weer van elkaar af. Dan heb je het totale energieverbruik inclusief het idle energie verbruik. 
-    energy_consumed=$(echo "$data_after - $data_before" | bc)
-    echo "total consumed: $energy_consumed"
-    # Bereken het idle energie verbruik tijdens het programma door de idle energie per seconde keer hoe lang het programma gerund heeft te doen.
-    real_time=$(echo "$elapsed_time" | grep 'real' | awk '{print $2}')
-    echo "real_time: $real_time"
-    total_seconds=$(echo $real_time | awk -Fm '{print $1 * 60 + $2}' | bc -l)
-    echo "total_seconds: $total_seconds"
-    idle_energy_consumed=$(echo "$total_seconds * $idle_power_consumption" | bc -l)
-    echo "idle energy: $idle_energy_consumed"
-    # Haal dit van het totale energieverbruik van het programma af en dan heb je het energieverbruik van het programma zelf.
-    actual_energy_consumed=$(echo "$energy_consumed - $idle_energy_consumed" | bc -l)
-    echo "actually consumed: $actual_energy_consumed"
-}
-
-
 get_idle_power_consumption1() {
     local l_idle_power_consumption=-1
     local sleep_time="$1"
